@@ -7,6 +7,7 @@ module.exports = {
   devtool: "cheap-module-source-map",
   entry: {
     popup: path.resolve("src/popup/popup.tsx"),
+    options: path.resolve("src/options/options.tsx"),
   },
   module: {
     rules: [
@@ -15,22 +16,26 @@ module.exports = {
         test: /\.tsx?$/,
         exclude: /node_modules/,
       },
+      {
+        use: ["style-loader", "css-loader"],
+        test: /\.css$/,
+      },
+      {
+        type: "asset/resource",
+        test: /\.(png|svg|jpg|jpeg|gif|woff|woff2|eot|ttf)$/i,
+      },
     ],
   },
   plugins: [
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve("src/manifest.json"),
+          from: path.resolve("src/static"),
           to: path.resolve("dist"),
         },
       ],
     }),
-    new HtmlPlugin({
-      title: "React Extension",
-      filename: "popup.html",
-      chunks: ["popup"],
-    }),
+    ...getHTMLPlugins(["popup", "options"]),
   ],
   resolve: {
     extensions: [".tsx", ".ts", ".js", ".jsx"],
@@ -39,4 +44,20 @@ module.exports = {
     filename: "[name].js",
     path: path.resolve("dist"),
   },
+  optimization: {
+    splitChunks: {
+      chunks: "all",
+    },
+  },
 };
+
+function getHTMLPlugins(chunks) {
+  return chunks.map(
+    (chunk) =>
+      new HtmlPlugin({
+        title: "React Extension",
+        filename: `${chunk}.html`,
+        chunks: [chunk],
+      })
+  );
+}
